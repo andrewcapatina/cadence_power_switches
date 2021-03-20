@@ -1,0 +1,22 @@
+# UPF file for memory modules.
+
+create_power_domain MEM
+
+create_supply_port VDD -domain MEM
+create_supply_net VDD -domain MEM 
+connect_supply_net VDD -ports {VDD}
+
+create_supply_port VSS -domain MEM
+create_supply_net VSS -domain MEM
+connect_supply_net VSS -ports {VSS}
+
+add_port_state VDD -state {OFF 0.00} -state {ON 0.95}
+add_port_state VSS -state {VSS_OFF 0.00}
+
+set_domain_supply_net MEM \
+	-primary_power_net VDD \
+	-primary_ground_net VSS
+
+create_pst PST_MEM -supplies {VDD VSS}
+add_pst_state PS_1 -pst PST_MEM -state {ON VSS_OFF}
+add_pst_state PS_2 -pst PST_MEM -state {OFF VSS_OFF}

@@ -1,0 +1,34 @@
+# UPF file for memory modules.
+
+create_power_domain CPU
+
+create_supply_port VDD -domain CPU
+create_supply_net VDD -domain CPU
+create_supply_net VDD_in -domain CPU
+connect_supply_net VDD_in -ports {VDD}
+
+create_supply_port VSS -domain CPU
+create_supply_net VSS -domain CPU
+connect_supply_net VSS -ports {VSS}
+
+set_domain_supply_net CPU \
+	-primary_power_net VDD \
+	-primary_ground_net VSS
+
+# Creating power switch 
+create_power_switch sw1 \
+	-domain CPU \
+	-input_supply_port {vin VDD_in} \
+	-output_supply_port {vout VDD} \
+	-control_port {ms_sel sw_ctrl_net} \
+	-on_state {on vin {!ms_sel}}
+
+
+add_port_state VDD -state {OFF 0.00} -state {ON 0.95}
+add_port_state VSS -state {VSS_OFF 0.00}
+add_port_state sw1/vout -state {OFF 0.00} -state {ON 0.95}
+
+create_pst PST_CPU -supplies {VDD sw1/vout VSS}
+add_pst_state PS_1 -pst PST_CPU -state {ON ON VSS_OFF}
+add_pst_state PS_2 -pst PST_CPU -state {ON OFF VSS_OFF}
+add_pst_state PS_3 -pst PST_CPU -state {OFF OFF VSS_OFF}
