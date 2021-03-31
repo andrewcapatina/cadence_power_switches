@@ -19,14 +19,14 @@ module top(input         clk, reset,
   imem imem(pc[7:2], instr);
   dmem dmem(clk, memwrite, dataadr, writedata, readdata);
 
-  power_manager power_manager(clk, reset, instr[31:26], sw_ctrl_net, sw_enable, iso_enable);
+  power_manager power_manager(clk, reset, instr, sw_ctrl_net, sw_enable, iso_enable);
 
 endmodule
 
 // Power manager; uses a counter and looks for NOP code.
 module power_manager(input logic clk,
 			  input logic reset,
-			  input logic [5:0] opcode,
+			  input logic [31:0] instr,
 			  output logic sw_ctrl_net,
 			  input logic sw_enable,
 			  output logic iso_enable);
@@ -41,9 +41,9 @@ module power_manager(input logic clk,
 	always@(posedge clk or posedge reset) begin
 		if(reset == 1)
 			counter <= 0;		
-		else if(counter < 10 && opcode == 6'b001000)
+		else if(counter < 10 && instr == 8'h20000000)
 			counter <= counter + 1;
-		else if(opcode != 6'b001000)
+		else if(instr != 8'h20000000)
 			counter <= 0;
     end
 
@@ -52,6 +52,12 @@ module power_manager(input logic clk,
 			sw_ctrl_net <= 1;
 		else
 			sw_ctrl_net <= 0;
+
+	always@(sw_ctrl_net)
+		if(sw_ctrl_net == 1)
+			iso_enable <= 0;
+		else 
+			iso_enable <= 1;
 
 endmodule
 

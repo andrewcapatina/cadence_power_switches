@@ -11,5 +11,5 @@ set_drive 0.001 [all_inputs]
 set_load 0.5 [all_outputs]
 
 
-group_path -name INPUTS -from [get_ports -filter "direction==in&&full_name!~*clk*"]
-group_path -name OUTPUTS -to [get_ports -filter "direction==out"]
+#group_path -name INPUTS -from [get_ports -filter "direction==in&&full_name!~*clk*"]
+#group_path -name OUTPUTS -to [get_ports -filter "direction==out"]
