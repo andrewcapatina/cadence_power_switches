@@ -1,0 +1,37 @@
+set upf_create_implicit_supply_sets false
+
+# Top level power domain.
+# Creating power domain in the current scope (top)
+create_power_domain PD_TOP -include_scope -elements {*}
+
+# Create power and ground nets for top domain.
+create_supply_net VDD -domain PD_TOP
+create_supply_port VDD -domain PD_TOP
+connect_supply_net VDD -ports {VDD}
+
+create_supply_net VSS -domain PD_TOP
+create_supply_port VSS -domain PD_TOP
+connect_supply_net VSS -ports {VSS} 
+
+# Power switch nets.
+create_supply_net VDD_SW -domain PD_TOP
+
+# Power switch for PD_CPU domain.
+create_power_switch SW_CPU -domain PD_TOP \
+-output_supply_port {VDD VDD_SW} \
+-input_supply_port {VDDG VDD} \
+-control_port {ms_sel sw_ctrl_net} \
+-on_state {on VDDG {!ms_sel}}
+
+connect_supply_net VDD_SW -ports {SW_CPU/VDD}
+connect_supply_net VDD -ports {SW_CPU/VDDG} 
+
+set_domain_supply_net PD_TOP -primary_power_net VDD_SW -primary_ground_net VSS
+
+add_port_state VDD -state {ON 0.95}
+add_port_state SW_CPU/VDD -state {ON 0.95} -state {OFF 0.00}
+add_port_state VSS -state {VSS_OFF 0.00}
+
+create_pst PST -supplies {VDD SW_CPU/VDD VSS}
+add_pst_state PS_1 -pst PST -state {ON ON VSS_OFF}
+add_pst_state PS_2 -pst PST -state {ON OFF VSS_OFF}

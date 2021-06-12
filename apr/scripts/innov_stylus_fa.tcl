@@ -61,15 +61,29 @@ connect_global_net VDD_SW -type pgpin -pin VDD -power_domain PD_TOP -inst_base_n
 add_power_switches -power_domain PD_TOP -global_switch_cell_name HEADX2_RVT -1801power_switch_rule_name SW_CPU -column -horizontal_pitch 50 -no_double_height_check 
 #-top_offset 3
 
-create_physical_pin -layer M1 -rect { 0.5 0.5 2 2} -name VDD -net VDD -same_port
-create_physical_pin -layer M1 -rect { 0.5 2.5 2 4.5} -name VSS -net VSS -same_port
+create_physical_pin -layer M1 -rect { 0.5 25 2 27} -name VDD -net VDD -same_port
+create_physical_pin -layer M1 -rect { 0.5 17.5 2 19.5} -name VSS -net VSS -same_port
+
 create_physical_pin -layer M1 -rect { 0.5 5 2 6} -name sw_ctrl_net -net VSS -same_port
-create_physical_pin -layer M1 -rect { 0.5 6.5 2 8.5} -name x -net x -same_port
-create_physical_pin -layer M1 -rect { 0.5 9 2 11} -name y -net y -same_port
+
+create_physical_pin -layer M1 -rect { 0.5 6.5 2 8.5} -name x[0] -net x[0] -same_port
+create_physical_pin -layer M1 -rect { 0.5 9 2 11} -name x[1] -net x[1] -same_port
+create_physical_pin -layer M1 -rect { 2.5 9 4.5 11} -name x[2] -net x[2] -same_port
+create_physical_pin -layer M1 -rect { 5 9 7 11} -name x[3] -net x[3] -same_port
+
+create_physical_pin -layer M1 -rect { 0.5 22.5 2 24.5} -name y[0] -net y[0] -same_port
+create_physical_pin -layer M1 -rect { 0.5 20 2 22} -name y[1] -net y[1] -same_port
+create_physical_pin -layer M1 -rect { 2.5 22.5 4 24.5} -name y[2] -net y[2] -same_port
+create_physical_pin -layer M1 -rect { 2.5 20 4 22} -name y[3] -net y[3] -same_port
+
 create_physical_pin -layer M1 -rect { 0.5 11.5 2 13.5} -name cin -net cin -same_port
 
 create_physical_pin -layer M1 -rect { 25 0.5 26.5 2} -name cout -net cout -same_port
-create_physical_pin -layer M1 -rect { 25 2.5 26.5 4.5} -name s -net s -same_port
+
+create_physical_pin -layer M1 -rect { 25 2.5 26.5 4.5} -name sum[0] -net sum[0] -same_port
+create_physical_pin -layer M1 -rect { 27 2.5 28.5 4.5} -name sum[1] -net sum[1] -same_port
+create_physical_pin -layer M1 -rect { 25 5 26.5 7} -name sum[2] -net sum[2] -same_port
+create_physical_pin -layer M1 -rect { 27 7.5 28.5 9.5} -name sum[3] -net sum[3] -same_port
 
 set_db add_stripes_stacked_via_bottom_layer M1
 set_db add_stripes_stacked_via_top_layer M7
@@ -81,7 +95,7 @@ deselect_obj -all
 select_obj PD_TOP
 # Adding stripes over header cells. 
 #add_stripes -nets {VDD} -direction vertical -layer M7 -master *HEADX2* -width 2  -over_power_domain 1 -spacing 12.5 -start_offset 0 -set_to_set_distance 4
-add_stripes -nets {VDD VSS} -layer M7 -master *HEADX2* -width 1.5  -over_power_domain 1 -spacing 1 -set_to_set_distance 5 -over_pins 1 -pin_layer TOP
+add_stripes -nets {VDD VSS} -layer M7 -master *HEADX2* -width 1.5  -over_power_domain 1 -spacing 4 -set_to_set_distance 10 -power_domains PD_TOP
 #add_stripes -nets {VDD} -direction vertical -layer M7 -width 0.2  -over_power_domain 1 -spacing 12.5 -start_offset 5 - set_to_set_distance 25 
 
 #add_stripes -nets {VSS} -direction vertical -layer M7 -width 0.2 -over_power_domain 1 -number_of_sets 2
@@ -90,16 +104,26 @@ route_special -nets {VDD} -allow_layer_change 1 -allow_jogging 1 -core_pin_targe
 
 deselect_obj -all
 
-route_special -nets {VDD_SW VSS} -allow_layer_change 1 -allow_jogging 1 -core_pin_target {stripe ring block_ring} -block_pin_target {nearest_target nearestRingStripe} -connect {block_pin pad_pin pad_ring core_pin floating_stripe} -pad_pin_port_connect {all_port all_geom} -power_domains {PD_TOP} -block_pin use_lef -layer_change_range {M1 M8}
+# Add the follow pins and connect VSS.
+route_special -nets {VDD_SW VSS} -allow_layer_change 1 -allow_jogging 1 -core_pin_target {stripe ring block_ring} -power_domains PD_TOP -block_pin_target {nearest_target} -connect {block_pin pad_pin pad_ring core_pin floating_stripe} 
+# Connect VDD port to core ring.
+route_special -nets {VDD} -allow_layer_change 1 -allow_jogging 1 -core_pin_target {block_ring} -power_domains PD_TOP -block_pin_target {nearest_target} -connect {block_pin pad_pin pad_ring core_pin floating_stripe}
+
 
 
 place_opt_design
 
 #ccopt_design
 
-#set_db route_design_detail_end_iteration 20
-#route_design 
+set_db route_design_detail_end_iteration 5
+route_design 
+
+write_db fa_route.innovus
+
+write_power_intent ../outputs/fa_innov_upf.upf -1801
 
 # Save netlist along with power and ground connections for LP verification.
-#write_netlist ../outputs/innovus_netlist_with_pg.vg -phys -include_pg_ports
+write_netlist ../outputs/fa_netlist.vg -phys -include_pg_ports
+
+write_def ../outputs/fa_def.def -floorplan
 

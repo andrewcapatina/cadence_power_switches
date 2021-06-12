@@ -8,28 +8,25 @@ set init_pwr_net {VDD}
 set init_gnd_net VSS
 set power_intent_file "../../syn/outputs/top_genus_upf.upf"
 
- Has standard cell libraries, level shifters, and power switches. 
+#Has standard cell libraries, level shifters, and power switches. 
 set link_library_worst "/pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_dlvl_ss0p75vn40c_i0p95v.lib /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_dlvl_ss0p75vn40c_i0p75v.lib /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_ulvl_ss0p75vn40c_i0p75v.lib /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_ss0p95vn40c.lib /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_ss0p75vn40c.lib /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_pg_ss0p95vn40c.lib"
 set init_lef_file "/u/capatina/ASIC/PSU_RTL2GDS/cadence_cap_tech/tech.lef /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/lef/saed32nm_rvt_1p9m.lef "
 set library $link_library_worst
 
-echo create_library_set -name worst_libs -timing \"$link_library_worst\" > mmmc.tcl
+#echo create_library_set -name worst_libs -timing \"$link_library_worst\" > mmmc.tcl
 
-echo create_rc_corner -name cmax -T -40 -preRoute_cap 1.0 -preRoute_res 1.0 -postRoute_cap 1.0 -postRoute_res 1.0 >> mmmc.tcl
+#echo create_rc_corner -name cmax -T -40 -preRoute_cap 1.0 -preRoute_res 1.0 -postRoute_cap 1.0 -postRoute_res 1.0 >> mmmc.tcl
 
-echo create_constraint_mode -name const_mode -sdc_files {"../../constraints/top.sdc"} >> mmmc.tcl
+#echo create_constraint_mode -name const_mode -sdc_files {"../../constraints/top.sdc"} >> mmmc.tcl
 
-echo create_delay_corner -name worst_corner -library_set worst_libs -rc_corner cmax >> mmmc.tcl
+#echo create_delay_corner -name worst_corner -library_set worst_libs -rc_corner cmax >> mmmc.tcl
 
-echo create_analysis_view -name func_worst_scenario -delay_corner worst_corner -constraint_mode const_mode >> mmmc.tcl
+#echo create_analysis_view -name func_worst_scenario -delay_corner worst_corner -constraint_mode const_mode >> mmmc.tcl
 
-echo set_analysis_view -setup func_worst_scenario -hold func_worst_scenario >> mmmc.tcl
+#echo set_analysis_view -setup func_worst_scenario -hold func_worst_scenario >> mmmc.tcl
 
-set init_mmmc_file mmmc.tcl
+#set init_mmmc_file mmmc.tcl
 
-#set_global _enable_mmmc_by_default_flow $CTE::mmmc_default
-
-#source ../../constraints/${top_design}.mmmc.sdc
 
 init_design
 

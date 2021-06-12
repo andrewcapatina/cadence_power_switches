@@ -31,7 +31,7 @@ module power_manager(input logic clk,
 			  input logic sw_enable,
 			  output logic iso_enable);
 
-	logic [4:0]	counter;
+	logic [3:0]	counter;
 
 	initial
 		counter = 0;
@@ -55,9 +55,9 @@ module power_manager(input logic clk,
 
 	always@(sw_ctrl_net)
 		if(sw_ctrl_net == 1)
-			iso_enable <= 0;
-		else 
 			iso_enable <= 1;
+		else 
+			iso_enable <= 0;
 
 endmodule
 
@@ -240,26 +240,26 @@ module dmem(input  logic        clk, we,
             input  logic [31:0] a, wd,
             output logic [31:0] rd);
 
-  logic [31:0] RAM[63:0];
+  logic [31:0] mem[63:0];
 
-  assign rd = RAM[a[31:2]]; // word aligned
+  assign rd = mem[a[31:2]]; // word aligned
 
   always @(posedge clk)
     if (we)
-      RAM[a[31:2]] <= wd;
+      mem[a[31:2]] <= wd;
 endmodule
 
 module imem(input  logic [5:0]  a,
             output logic [31:0] rd);
 
-  logic [31:0] RAM[63:0];
+  logic [31:0] mem[63:0];
 
   initial
     begin
-      $readmemh("memfile.dat",RAM); // initialize memory
+      $readmemh("memfile.dat",mem); // initialize memory
     end
 
-  assign rd = RAM[a]; // word aligned
+  assign rd = mem[a]; // word aligned
 endmodule
 
 module regfile(input  logic        clk, 

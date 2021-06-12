@@ -1,0 +1,78 @@
+# Top-down approach for UPF
+set upf_create_implicit_supply_sets false
+
+# creating power domains.
+create_power_domain PD_TOP -include_scope
+create_power_domain PD_CPU -elements {mips}
+create_power_domain PD_IMEM -elements {imem}
+create_power_domain PD_DMEM -elements {dmem}
+
+create_upf2hdl_vct upf2vhdl_vdd -hdl_type {sv} -table {{OFF 0} {FULL_ON 1} {PARTIAL_ON 0} {UNDETERMINED 0}}
+
+create_upf2hdl_vct upf2vhdl_vss -hdl_type {sv} -table {{OFF 1} {FULL_ON 1} {PARTIAL_ON 1} {UNDETERMINED 1}}
+
+# Creating main supply ports.
+create_supply_port VDD
+create_supply_port VSS
+
+# Creating VDD supply nets.
+create_supply_net VDD -domain PD_TOP
+create_supply_net VDD -domain PD_CPU -reuse
+create_supply_net VDD -domain PD_IMEM -reuse
+create_supply_net VDD -domain PD_DMEM -reuse
+
+# Power switch nets.
+create_supply_net VDD_CPU_OUT -domain PD_CPU 
+
+# Connecting VDD to main port.
+connect_supply_net VDD -ports {VDD} -vct upf2vhdl_vdd
+
+# Creating ground supply nets.
+create_supply_net VSS -domain PD_TOP
+create_supply_net VSS -domain PD_CPU -reuse
+create_supply_net VSS -domain PD_IMEM -reuse
+create_supply_net VSS -domain PD_DMEM -reuse
+
+# Connecting supply nets to main port.
+connect_supply_net VSS -ports {VSS} -vct upf2vhdl_vss
+
+# Setting the main power and supply nets for each domain. 
+set_domain_supply_net PD_TOP -primary_power_net VDD -primary_ground_net VSS
+set_domain_supply_net PD_CPU -primary_power_net VDD_CPU_OUT -primary_ground_net VSS
+set_domain_supply_net PD_IMEM -primary_power_net VDD -primary_ground_net VSS
+set_domain_supply_net PD_DMEM -primary_power_net VDD -primary_ground_net VSS
+
+# Power switch for PD_CPU domain.
+create_power_switch SW_CPU -domain PD_CPU \
+-output_supply_port {VDD VDD_CPU_OUT} \
+-input_supply_port {VDDG VDD} \
+-control_port {ms_sel sw_ctrl_net} \
+-on_state {on VDDG {!ms_sel}}
+
+connect_supply_net VDD_CPU_OUT -ports {SW_CPU/VDD} -vct upf2vhdl_vdd
+connect_supply_net VDD -ports {SW_CPU/VDDG} -vct upf2vhdl_vdd
+
+add_port_state VDD -state {ON 0.95} -state {OFF 0.00}
+add_port_state VSS -state {VSS_ON 0.00}
+add_port_state SW_CPU/VDD -state {ON 0.95} -state {OFF 0.00}
+
+set_isolation ISO_CPU -domain PD_CPU -applies_to outputs -clamp_value 1 -isolation_power_net VDD -isolation_ground_net VSS
+
+set_isolation_control ISO_CPU -domain PD_CPU -isolation_signal iso_enable -isolation_sense high -location parent
+
+#create_pst PST -supplies {VDD SW_CPU/VDD VSS}
+#add_pst_state PS1 -pst PST -state {ON ON VSS_ON}
+#add_pst_state PS2 -pst PST -state {ON OFF VSS_ON}
+
+# POWER STATE TABLE MAY NEED SOME WORK
+# Slightly modified from above because conformal was giving error
+# about PD_CPU always being ON, but I though the PST above
+# indicates otherwise. 
+create_pst PST -supplies {VDD VSS}
+add_pst_state PS1 -pst PST -state {ON VSS_ON}
+add_pst_state PS2 -pst PST -state {OFF VSS_ON}
+
+
+
+
+

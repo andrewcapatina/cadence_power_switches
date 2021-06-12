@@ -18,7 +18,7 @@ set_db cap_table_file "/u/capatina/ASIC/PSU_RTL2GDS/cadence_cap_tech/saed32nm_1p
 
 read_hdl -language sv ../verilog/top.sv
 
-read_power_intent -1801 ../upf/upf.upf -module top
+read_power_intent -1801 ../outputs/top_genus_upf.upf -module top
 
 elaborate ${top_design}
 
