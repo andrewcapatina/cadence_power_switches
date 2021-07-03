@@ -9,7 +9,7 @@ set init_gnd_net VSS
 set power_intent_file "../../syn/outputs/top_genus_upf.upf"
 #Has standard cell libraries, level shifters, and power switches. 
 set link_library_worst "/pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_ss0p95vn40c.lib /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_ss0p75vn40c.lib /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/db_nldm/saed32rvt_pg_ss0p95vn40c.lib"
-set init_lef_file "/u/capatina/ASIC/PSU_RTL2GDS/cadence_cap_tech/tech.lef /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/lef/saed32nm_rvt_1p9m.lef "
+#set init_lef_file "/u/capatina/ASIC/PSU_RTL2GDS/cadence_cap_tech/tech.lef /pkgs/synopsys/2020/32_28nm/SAED32_EDK/lib/stdcell_rvt/lef/saed32nm_rvt_1p9m.lef "
 set library $link_library_worst
 
 # slow = worst = max = setup
@@ -48,11 +48,11 @@ init_design
 read_power_intent -1801 ${power_intent_file} 
 commit_power_intent -verbose 
 
-create_floorplan -site unit -core_size {420 220 50 50 50 50}
+create_floorplan -site unit -core_size {500 330 50 50 50 50}
 
-update_power_domain PD_CPU -power_extend_edges {10 0 0 10} -gap_sides {10 0 0 10} -box 50 50 280 140
-update_power_domain PD_IMEM -power_extend_edges {10 0 10 0} -gap_sides {10 0 10 0} -box 300 50 469.98 140
-update_power_domain PD_DMEM -power_extend_edges {10 10 10 10} -gap_sides {10 10 10 10} -box 60 170 460 260
+update_power_domain PD_CPU -power_extend_edges {10 0 0 10} -gap_sides {10 0 0 10} -box 50 50 360 220
+update_power_domain PD_IMEM -power_extend_edges {10 0 10 0} -gap_sides {10 0 10 0} -box 380 50 549.93 220
+update_power_domain PD_DMEM -power_extend_edges {10 10 10 10} -gap_sides {10 10 10 10} -box 60 250 540 380
 
 plan_design
 #plan_design -constraints_file ../../constraints/plan_design.sdc
@@ -79,7 +79,7 @@ deselect_obj -all
 select_obj PD_DMEM
 # Adding a power ring for a power domain boundary:
 add_rings -type block_rings -nets {VDD VSS} -layer {top M7 bottom M7 left M8 right M8} -offset 1 -width 4 -spacing 1.0 -around power_domain
-add_stripes -nets {VDD VSS} -direction vertical -layer M7 -width 1 -set_to_set_distance 25 -start_offset 1 -spacing 12.5 -over_power_domain 1
+add_stripes -nets {VDD VSS} -direction vertical -layer M7 -width .057 -set_to_set_distance 25 -start_offset 1 -spacing 12.5 -over_power_domain 1
 
 deselect_obj -all
 select_obj PD_IMEM
@@ -108,7 +108,7 @@ set_db add_stripes_allow_jog {padcore_ring block_ring}
 set_db add_stripes_skip_via_on_pin {standardcell} 
 set_db add_stripes_skip_via_on_wire_shape {noshape}
 
-add_stripes -nets {VDD VSS} -direction vertical -layer M7 -width 1 -set_to_set_distance 25 -start_offset 1 -spacing 12.5 -over_power_domain 1
+add_stripes -nets {VDD VSS} -direction vertical -layer M7 -width 0.057 -set_to_set_distance 25 -start_offset 1 -spacing 12.5 -over_power_domain 1
 
 deselect_obj -all
 select_obj PD_CPU
@@ -117,7 +117,7 @@ add_rings -nets {VDD VSS} -type block_rings -around power_domain -layer {top M7 
 
 # Add stripes over header cells and ground stripes over power domain.
 add_stripes -nets {VDD} -direction vertical -layer M7 -master *HEADX2* -width 2  -over_power_domain 1 -spacing 12.5 -start_offset 0 -set_to_set_distance 25 -over_pins 1
-add_stripes -nets {VSS} -direction vertical -layer M7 -master *HEADX2* -width 2  -over_power_domain 1 -spacing 12.5 -start_offset 10 -set_to_set_distance 25
+add_stripes -nets {VSS} -direction vertical -layer M7 -master *HEADX2* -width 0.57  -over_power_domain 1 -spacing 12.5 -start_offset 10 -set_to_set_distance 25
 
 
 # Adding the follow pins to mips/CPU domain.
@@ -140,18 +140,37 @@ route_special -nets {VDD VSS} -allow_layer_change 1 -allow_jogging 1 -core_pin_t
 # top domain follow pins.
 route_special -nets {VDD VSS} -allow_layer_change 1 -allow_jogging 1 -core_pin_target {stripe ring block_ring} -power_domains PD_TOP -block_pin_target {nearest_target} -connect {block_pin pad_pin pad_ring core_pin floating_stripe} 
 
+#set_db opt_max_density 0.80
+set_db place_global_cong_effort high
+set_db place_global_max_density 0.35
+
+set_db place_global_uniform_density true
+set_db place_detail_irdrop_aware_effort high
+
+source ../scripts/cell_padding.tcl -verbose
+source ../scripts/cell_padding_commands.tcl 
+
 place_design
 opt_design -pre_cts
-# Does logic optimization, may not want that.
-#place_opt_design
+
+#place_fix_congestion
 
 ccopt_design
 
-set_db route_design_detail_end_iteration 7
-set_db route_design_detail_min_length_for_spread_wire {M1 0.40 M2 0.08 M3 0.08 M4 0.08}
-set_db route_design_detail_post_route_spread_wire true
+#set_route_attributes -nets [get_nets *] -preferred_extra_space_tracks 2
+
+set_db route_design_detail_end_iteration 25
+set_db route_design_detail_min_length_for_spread_wire {M1 0.005 M2 0.08 M3 0.08 M4 0.08}
+set_db route_design_detail_post_route_spread_wire 1
 set_db route_design_strict_honor_route_rule true
 set_route_attributes -route_rule_effort hard -nets [get_nets *]
+
+set_db route_design_detail_search_and_repair true
+set_db route_design_with_si_driven true
+
+#set_route_attributes -top_preferred_routing_layer M10 -bottom_preferred_routing_layer M2 -preferred_routing_layer_effort hard -nets [get_nets *]
+set_db edit_wire_unrestricted_regular_wire_width false
+
 
 route_design 
 
